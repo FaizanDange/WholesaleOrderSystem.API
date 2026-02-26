@@ -1,0 +1,6 @@
+@WholesaleOrderSystem.API_HostAddress = http://localhost:5166
+
+GET {{WholesaleOrderSystem.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

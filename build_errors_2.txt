@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Users\faiza\.gemini\antigravity\scratch\WholesaleOrderSystem\WholesaleOrderSystem.API\Program.cs(4,25): error CS0234: The type or namespace name 'Models' does not exist in the namespace 'Microsoft.OpenApi' (are you missing an assembly reference?) [C:\Users\faiza\.gemini\antigravity\scratch\WholesaleOrderSystem\WholesaleOrderSystem.API\WholesaleOrderSystem.API.csproj]
+
+Build FAILED.
+
+C:\Users\faiza\.gemini\antigravity\scratch\WholesaleOrderSystem\WholesaleOrderSystem.API\Program.cs(4,25): error CS0234: The type or namespace name 'Models' does not exist in the namespace 'Microsoft.OpenApi' (are you missing an assembly reference?) [C:\Users\faiza\.gemini\antigravity\scratch\WholesaleOrderSystem\WholesaleOrderSystem.API\WholesaleOrderSystem.API.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.17
