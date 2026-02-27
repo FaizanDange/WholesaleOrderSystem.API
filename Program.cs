@@ -18,8 +18,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddCors(options =>
 {
+    var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
     options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    {
+        if (origins != null && origins.Length > 0)
+        {
+            policy.WithOrigins(origins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    });
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -41,16 +54,16 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.MapOpenApi();
     app.MapScalarApiReference();
-}
+//}
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+//if (app.Environment.IsDevelopment())
+//{
+    //app.UseHttpsRedirection();
+//}
 app.UseStaticFiles();
 
 app.UseCors("AllowAll");
@@ -61,22 +74,22 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Seed Default Admin
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
-    if (!context.Users.Any(u => u.Role == "Admin"))
-    {
-        var admin = new WholesaleOrderSystem.API.Models.User
-        {
-            Name = "System Admin",
-            Email = "admin@wholesalebox.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-            Role = "Admin"
-        };
-        context.Users.Add(admin);
-        context.SaveChangesAsync().Wait();
-    }
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//    context.Database.Migrate();
+//    if (!context.Users.Any(u => u.Role == "Admin"))
+//    {
+//        var admin = new WholesaleOrderSystem.API.Models.User
+//        {
+//            Name = "System Admin",
+//            Email = "admin@wholesalebox.com",
+//            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+//            Role = "Admin"
+//        };
+//        context.Users.Add(admin);
+//        context.SaveChangesAsync().Wait();
+//    }
+//}
 
 app.Run();
