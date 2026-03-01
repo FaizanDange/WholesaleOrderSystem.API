@@ -6,6 +6,7 @@ using System.Text;
 using WholesaleOrderSystem.API.Data;
 using Serilog;
 using WholesaleOrderSystem.API.Middleware;
+using Microsoft.Extensions.Configuration;
 
 // Configure Serilog from configuration and use it as the logging provider
 Log.Logger = new LoggerConfiguration()

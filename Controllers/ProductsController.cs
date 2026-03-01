@@ -26,13 +26,32 @@ namespace WholesaleOrderSystem.API.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<IActionResult> GetProducts(int page = 1, int pageSize = 6)
         {
-            _logger.LogInformation("GetProducts requested by {User}", User?.Identity?.Name ?? "anonymous");
-            // Both Admin and Customer can view active products
-            var products = await _context.Products.Where(p => p.IsActive).ToListAsync();
-            _logger.LogInformation("GetProducts returned {Count} items", products.Count);
-            return products;
+            _logger.LogInformation("GetProducts requested by {User} page {Page} pageSize {PageSize}", User?.Identity?.Name ?? "anonymous", page, pageSize);
+
+            if (page < 1) page = 1;
+            const int MAX_PAGE_SIZE = 100;
+            if (pageSize < 1) pageSize = 10;
+            pageSize = Math.Min(pageSize, MAX_PAGE_SIZE);
+
+            var query = _context.Products.AsNoTracking().Where(p => p.IsActive).OrderBy(p => p.ProductId);
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((page - 1) * pageSize).Take(pageSize)
+                .Select(p => new ProductListDto
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.ProductName,
+                    ImageUrl = p.ImageUrl,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    Unit = p.Unit
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("GetProducts returned {Count} items (total {Total})", items.Count, totalCount);
+
+            return Ok(new { items, totalCount });
         }
 
         // GET: api/Products/5
