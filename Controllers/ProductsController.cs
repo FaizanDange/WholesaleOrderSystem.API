@@ -51,12 +51,18 @@ namespace WholesaleOrderSystem.API.Controllers
             string? imageUrl = null;
             if (image != null)
             {
-                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+                var webRoot = _environment.WebRootPath;
+                if (string.IsNullOrEmpty(webRoot))
+                {
+                    webRoot = Path.Combine(_environment.ContentRootPath, "wwwroot");
+                }
+
+                var uploads = Path.Combine(webRoot, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-                
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName ?? string.Empty);
                 var filePath = Path.Combine(uploads, fileName);
-                
+
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await image.CopyToAsync(fileStream);
@@ -93,10 +99,16 @@ namespace WholesaleOrderSystem.API.Controllers
 
             if (image != null)
             {
-                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+                var webRoot = _environment.WebRootPath;
+                if (string.IsNullOrEmpty(webRoot))
+                {
+                    webRoot = Path.Combine(_environment.ContentRootPath, "wwwroot");
+                }
+
+                var uploads = Path.Combine(webRoot, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName ?? string.Empty);
                 var filePath = Path.Combine(uploads, fileName);
 
                 using (var fileStream = new FileStream(filePath, FileMode.Create))

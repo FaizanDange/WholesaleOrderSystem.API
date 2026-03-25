@@ -16,6 +16,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
 builder.Services.AddCors(options =>
 {
     var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
@@ -62,7 +63,7 @@ var app = builder.Build();
 
 //if (app.Environment.IsDevelopment())
 //{
-    //app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 //}
 app.UseStaticFiles();
 
@@ -74,21 +75,21 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Seed Default Admin
-//using (var scope = app.Services.CreateScope())
+//using (var scope = app.services.createscope())
 //{
-//    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    context.Database.Migrate();
-//    if (!context.Users.Any(u => u.Role == "Admin"))
+//    var context = scope.serviceprovider.getrequiredservice<appdbcontext>();
+//    context.database.migrate();
+//    if (!context.users.any(u => u.role == "admin"))
 //    {
-//        var admin = new WholesaleOrderSystem.API.Models.User
+//        var admin = new wholesaleordersystem.api.models.user
 //        {
-//            Name = "System Admin",
-//            Email = "admin@wholesalebox.com",
-//            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-//            Role = "Admin"
+//            name = "system admin",
+//            email = "admin@wholesalebox.com",
+//            passwordhash = bcrypt.net.bcrypt.hashpassword("admin@123"),
+//            role = "admin"
 //        };
-//        context.Users.Add(admin);
-//        context.SaveChangesAsync().Wait();
+//        context.users.add(admin);
+//        context.savechangesasync().wait();
 //    }
 //}
 
