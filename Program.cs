@@ -4,8 +4,18 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
 using WholesaleOrderSystem.API.Data;
+using Serilog;
+using WholesaleOrderSystem.API.Middleware;
+using Microsoft.Extensions.Configuration;
+
+// Configure Serilog from configuration and use it as the logging provider
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(new ConfigurationBuilder().AddJsonFile("appsettings.json").AddEnvironmentVariables().Build())
+    .Enrich.FromLogContext()
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // Add services to the container.
 
@@ -66,6 +76,9 @@ var app = builder.Build();
     app.UseHttpsRedirection();
 //}
 app.UseStaticFiles();
+
+// Add request/response logging middleware early in the pipeline
+app.UseRequestResponseLogging();
 
 app.UseCors("AllowAll");
 

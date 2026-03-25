@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WholesaleOrderSystem.API.Data;
 using WholesaleOrderSystem.API.Models;
 using WholesaleOrderSystem.API.DTOs;
@@ -14,40 +15,69 @@ namespace WholesaleOrderSystem.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
- 
-        public ProductsController(AppDbContext context, IWebHostEnvironment environment)
+        private readonly ILogger<ProductsController> _logger;
+
+        public ProductsController(AppDbContext context, IWebHostEnvironment environment, ILogger<ProductsController> logger)
         {
             _context = context;
             _environment = environment;
+            _logger = logger;
         }
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<IActionResult> GetProducts(int page = 1, int pageSize = 6)
         {
-            // Both Admin and Customer can view active products
-            return await _context.Products.Where(p => p.IsActive).ToListAsync();
+            _logger.LogInformation("GetProducts requested by {User} page {Page} pageSize {PageSize}", User?.Identity?.Name ?? "anonymous", page, pageSize);
+
+            if (page < 1) page = 1;
+            const int MAX_PAGE_SIZE = 100;
+            if (pageSize < 1) pageSize = 10;
+            pageSize = Math.Min(pageSize, MAX_PAGE_SIZE);
+
+            var query = _context.Products.AsNoTracking().Where(p => p.IsActive).OrderBy(p => p.ProductId);
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((page - 1) * pageSize).Take(pageSize)
+                .Select(p => new ProductListDto
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.ProductName,
+                    ImageUrl = p.ImageUrl,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    Unit = p.Unit
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("GetProducts returned {Count} items (total {Total})", items.Count, totalCount);
+
+            return Ok(new { items, totalCount });
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
+            _logger.LogInformation("GetProduct {Id} requested by {User}", id, User?.Identity?.Name ?? "anonymous");
             var product = await _context.Products.FindAsync(id);
 
             if (product == null || !product.IsActive)
             {
+                _logger.LogWarning("GetProduct {Id} not found or inactive", id);
                 return NotFound();
             }
 
+            _logger.LogInformation("GetProduct {Id} returned", id);
             return product;
         }
 
         // POST: api/Products
         [HttpPost]
         [Authorize(Roles = "Admin")]
+        [Consumes("multipart/form-data")]
         public async Task<ActionResult<Product>> PostProduct([FromForm] ProductDto dto, IFormFile? image)
         {
+            _logger.LogInformation("PostProduct requested by {User} with name {ProductName}", User?.Identity?.Name ?? "anonymous", dto.ProductName);
             string? imageUrl = null;
             if (image != null)
             {
@@ -83,17 +113,21 @@ namespace WholesaleOrderSystem.API.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Product created {ProductId} by {User}", product.ProductId, User?.Identity?.Name ?? "anonymous");
             return CreatedAtAction("GetProduct", new { id = product.ProductId }, product);
         }
 
         // PUT: api/Products/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> PutProduct(int id, [FromForm] ProductDto dto, IFormFile? image)
         {
+            _logger.LogInformation("PutProduct {Id} requested by {User}", id, User?.Identity?.Name ?? "anonymous");
             var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
+                _logger.LogWarning("PutProduct {Id} not found", id);
                 return NotFound();
             }
 
@@ -138,14 +172,17 @@ namespace WholesaleOrderSystem.API.Controllers
             {
                 if (!ProductExists(id))
                 {
+                    _logger.LogWarning("PutProduct {Id} concurrency - product not found", id);
                     return NotFound();
                 }
                 else
                 {
+                    _logger.LogError("PutProduct {Id} concurrency exception", id);
                     throw;
                 }
             }
 
+            _logger.LogInformation("PutProduct {Id} updated successfully", id);
             return NoContent();
         }
 
@@ -154,9 +191,11 @@ namespace WholesaleOrderSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
+            _logger.LogInformation("DeleteProduct {Id} requested by {User}", id, User?.Identity?.Name ?? "anonymous");
             var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
+                _logger.LogWarning("DeleteProduct {Id} not found", id);
                 return NotFound();
             }
 
@@ -164,6 +203,7 @@ namespace WholesaleOrderSystem.API.Controllers
             product.IsActive = false;
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("DeleteProduct {Id} soft-deleted", id);
             return NoContent();
         }
 
